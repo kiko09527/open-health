@@ -99,6 +99,8 @@ export async function POST(
 
             try {
                 if (chatRoom.llmProviderId === 'ollama') {
+                    console.log('选择的ollama 请求URL',llmProvider.apiURL);
+                    console.log('选择的ollama llmProviderModelId',chatRoom.llmProviderModelId);
                     const response = await fetch(`${llmProvider.apiURL}/api/chat`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -108,7 +110,7 @@ export async function POST(
                             stream: true,
                         }),
                     });
-
+                    console.log('选择的ollama body',response.body);
                     const reader = response.body?.getReader();
                     if (!reader) throw new Error('No reader available');
 
@@ -120,6 +122,7 @@ export async function POST(
                         const lines = chunk.split('\n').filter(line => line.trim());
 
                         for (const line of lines) {
+                            console.log('选择的ollama line',line);
                             if (line.includes('[DONE]')) continue;
                             try {
                                 const json = JSON.parse(line);
@@ -178,14 +181,20 @@ export async function POST(
                             });
                     })
                 } else if (chatRoom.llmProviderId == 'google') {
+                    console.log('选择的google llmProvider.apiKey:', llmProvider.apiKey); // 在这里输出接收到的数据
                     const gemini = new GoogleGenerativeAI(llmProvider.apiKey)
                     const llmProviderModelId = chatRoom.llmProviderModelId;
+                    console.log('选择的google chatRoom.llmProviderModelId:', chatRoom.llmProviderModelId); // 在这里输出接收到的数据
                     if (!llmProviderModelId) throw new Error('No LLM model ID provided');
                     const model = gemini.getGenerativeModel({model: llmProviderModelId})
 
+                    console.log('选择的google messages:', messages); // 在这里输出接收到的数据
                     const lastMessage = messages[messages.length - 1]
+                    console.log('选择的google lastMessage:', lastMessage); // 在这里输出接收到的数据
                     const history = messages.filter(message => message.role !== 'system').slice(0, -1)
+                    console.log('选择的google history:', history); // 在这里输出接收到的数据
                     const systemInstruction = messages.find(message => message.role === 'system')
+                    console.log('选择的google systemInstruction:', systemInstruction); // 在这里输出接收到的数据
 
                     const chat = model.startChat({
                         systemInstruction: systemInstruction ? {
@@ -197,6 +206,8 @@ export async function POST(
                             parts: [{text: message.content}]
                         })),
                     })
+
+                    console.log('选择的google lastMessage:', lastMessage.content); // 在这里输出接收到的数据
 
                     const result = await chat.sendMessageStream(lastMessage.content)
                     for await (const chunk of result.stream) {
